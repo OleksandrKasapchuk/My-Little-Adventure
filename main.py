@@ -3,6 +3,11 @@ from pygame import*
 #player allow moving
 move_r=True
 move_l=True
+#jumping
+gravity = 1
+jump_height=20
+y_velocity=jump_height
+jumping=False
 #murder move
 moving_x=False
 moving_y=False
@@ -21,6 +26,7 @@ class GameSprite(sprite.Sprite):
 
 class Player(GameSprite): 
     def update(self): 
+        global jumping, y_velocity, jump_height
         keys = key.get_pressed() 
         '''
         if keys[K_w] or keys[K_UP] and self.rect.y > 5 and move_u: 
@@ -35,10 +41,19 @@ class Player(GameSprite):
         if keys[K_d] or keys[K_RIGHT] and self.rect.x < win_width - 60 and move_r: 
             self.rect.x = self.rect.x+self.speed 
             #moving_r = True
+        if keys[K_SPACE]:
+            jumping=True
+        if jumping:
+            self.rect.y -= y_velocity
+            y_velocity -= gravity
+            if y_velocity < -jump_height:
+                jumping=False
+                y_velocity=jump_height
+            
 class Enemy(GameSprite): 
     def update(self, target): 
         global moving_x, moving_y
-        if abs(self.rect.x - target.rect.x) <= 200 and abs(self.rect.y - target.rect.y) <= 200:
+        if abs(self.rect.x - target.rect.x) <= 300 and abs(self.rect.y - target.rect.y) <= 300:
             if self.rect.x != target.rect.x:
                 moving_x = True
             '''if self.rect.y != target.rect.y:
