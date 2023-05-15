@@ -1,7 +1,11 @@
 from pygame import*
 
+#player allow moving
 move_r=True
 move_l=True
+#murder move
+moving_x=False
+moving_y=False
 
 class GameSprite(sprite.Sprite): 
     def __init__(self, player_image, size_x, size_y, player_x, player_y, player_speed): 
@@ -31,6 +35,29 @@ class Player(GameSprite):
         if keys[K_d] or keys[K_RIGHT] and self.rect.x < win_width - 60 and move_r: 
             self.rect.x = self.rect.x+self.speed 
             #moving_r = True
+class Enemy(GameSprite): 
+    def update(self, target): 
+        global moving_x, moving_y
+        if abs(self.rect.x - target.rect.x) <= 200 and abs(self.rect.y - target.rect.y) <= 200:
+            if self.rect.x != target.rect.x:
+                moving_x = True
+            '''if self.rect.y != target.rect.y:
+                moving_y = True'''
+            if moving_x:
+                if self.rect.x - target.rect.x <= 0:
+                    self.rect.x += self.speed
+                if self.rect.x - target.rect.x >= 0:
+                    self.rect.x -= self.speed
+            '''if moving_y:
+                if self.rect.y - target.rect.y <= 0:
+                    self.rect.y += self.speed
+                if self.rect.y - target.rect.y >= 0:
+                    self.rect.y -= self.speed'''
+            if target.rect.x == self.rect.x:
+                moving_x = False
+            '''if target.rect.y == self.rect.y:
+                moving_y = False'''
+
 #window
 win_width = 1000 
 win_height = 600
@@ -45,9 +72,13 @@ finish = False
 FPS = 60
 clock = time.Clock() 
 
+#music
+mixer.init() 
+mixer.music.load('Bmusic.ogg') 
+mixer.music.play()
 #sprites
 player = Player('кольт.png',100,140, 50, 305, 5)
-
+enemy = Enemy('кольт.png',100, 130 ,625,320, 2)
 
 while game: 
     for e in event.get(): 
@@ -55,8 +86,10 @@ while game:
             game = False
     if finish != True:
         if play:
-            player.update() 
+            player.update()
+            enemy.update(player)
             window.blit(background, (0, 0))
             player.reset()
+            enemy.reset()
     display.update()
     clock.tick(FPS)
