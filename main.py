@@ -78,15 +78,37 @@ win_width = 1000
 win_height = 600
 window = display.set_mode((win_width, win_height)) 
 display.set_caption("My Little Adventure") 
-background = transform.scale(image.load("background1.jpg"), (win_width, win_height)) 
-
+#backgrounds
+backgrounds = []
+current_background = 0
+background1 = transform.scale(image.load("background1.jpg"), (win_width, win_height)) 
+backgrounds.append(background1)
+'''
+background2 = transform.scale(image.load("background2.jpg"), (win_width, win_height)) 
+backgrounds.append(background2)
+background3 = transform.scale(image.load("background3.jpg"), (win_width, win_height)) 
+backgrounds.append(background3)
+background4 = transform.scale(image.load("background4.jpg"), (win_width, win_height)) 
+backgrounds.append(background4)
+background5 = transform.scale(image.load("background5.jpg"), (win_width, win_height)) 
+backgrounds.append(background5)
+background6 = transform.scale(image.load("background6.jpg"), (win_width, win_height)) 
+backgrounds.append(background6)
+background7 = transform.scale(image.load("background7.jpg"), (win_width, win_height)) 
+backgrounds.append(background7)
+background8 = transform.scale(image.load("background8.jpg"), (win_width, win_height)) 
+backgrounds.append(background8)
+background9 = transform.scale(image.load("background9.jpg"), (win_width, win_height)) 
+backgrounds.append(background9)
+background10 = transform.scale(image.load("background10.jpg"), (win_width, win_height)) 
+backgrounds.append(background10)
+'''
 
 game = True
 play = True
 finish = False
 FPS = 60
 clock = time.Clock() 
-
 #music
 mixer.init() 
 mixer.music.load('Bmusic.ogg') 
@@ -94,7 +116,10 @@ mixer.music.play()
 #sprites
 player = Player('кольт.png',100,140, 50, 305, 5)
 enemy = Enemy('кольт.png',100, 130 ,625,320, 2)
-
+#boxes
+boxes = []
+box1 = GameSprite('box.png', 80, 80, 500, 370, 0)
+boxes.append(box1)
 while game: 
     for e in event.get(): 
         if e.type == QUIT: 
@@ -103,8 +128,9 @@ while game:
         if play:
             player.update()
             enemy.update(player)
-            window.blit(background, (0, 0))
-            player.reset()
+            window.blit(backgrounds[current_background], (0, 0))
+            box1.reset()
             enemy.reset()
+            player.reset()
     display.update()
     clock.tick(FPS)
