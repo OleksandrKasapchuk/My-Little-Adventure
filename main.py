@@ -1,17 +1,10 @@
 from pygame import*
 
 #player allow moving
-move_r=True
-move_l=True
-#jumping
-gravity = 1
-jump_height=20
-y_velocity=jump_height
-jumping=False
+move_u, move_d, move_r, move_l = True, True, True, True
 #murder move
 moving_x=False
 moving_y=False
-
 class GameSprite(sprite.Sprite): 
     def __init__(self, player_image, size_x, size_y, player_x, player_y, player_speed): 
         super().__init__() 
@@ -24,64 +17,197 @@ class GameSprite(sprite.Sprite):
     def reset(self): 
         window.blit(self.image, (self.rect.x, self.rect.y)) 
 
-class Player(GameSprite): 
-    def update(self): 
-        global jumping, y_velocity, jump_height
+class Player(sprite.Sprite): 
+    def __init__(self, player_image, size_x, size_y, player_x, player_y, player_speed): 
+        super().__init__() 
+        self.image = transform.scale(image.load(player_image), (size_x, size_y)) 
+        self.speed = player_speed 
+        self.rect = self.image.get_rect() 
+        self.rect.x = player_x 
+        self.rect.y = player_y 
+        self.size_x, self.size_y = size_x, size_y 
+        self.images_right = []
+        self.images_left = []
+        self.index = 0
+        self.counter = 0
+        self.jumped = False
+        self.vel_y = 0
+
+        for num in range(1, 9):
+            img_right = image.load(f'main_hero_walk_right/main_hero_walk_right_{num}.png')
+            img_right = transform.scale(img_right, (self.size_x, self.size_y))
+            img_left = transform.flip(img_right, True, False)
+            self.images_right.append(img_right)
+            self.images_left.append(img_left)
+        self.image = self.images_right[self.index]
+        self.direction = 0
+    def reset(self): 
+        window.blit(self.image, (self.rect.x, self.rect.y))
+    
+    def update(self):
+        walk_cooldown = 2
         keys = key.get_pressed() 
-        '''
-        if keys[K_w] or keys[K_UP] and self.rect.y > 5 and move_u: 
-            self.rect.y = self.rect.y-self.speed 
-            moving_u = True 
-        if keys[K_s] or keys[K_DOWN] and self.rect.y < win_height - 80 and move_d: 
-            self.rect.y = self.rect.y+self.speed 
-            moving_d = True'''
-        if keys[K_a] or keys[K_LEFT] and self.rect.x > 2 and move_l:
-            self.rect.x = self.rect.x-self.speed 
-            #moving_l = True
-        if keys[K_d] or keys[K_RIGHT] and self.rect.x < win_width - 60 and move_r: 
-            self.rect.x = self.rect.x+self.speed 
-            #moving_r = True
-        if keys[K_SPACE]:
-            jumping=True
-        if jumping:
-            self.rect.y -= y_velocity
-            y_velocity -= gravity
-            if y_velocity < -jump_height:
-                jumping=False
-                y_velocity=jump_height
-            
-class Enemy(GameSprite): 
-    def update(self, target): 
+        if keys[K_a] or keys[K_LEFT]:
+            self.rect.x -= self.speed 
+            self.counter += 1
+            self.direction = -1
+        if keys[K_d] or keys[K_RIGHT]: 
+            self.rect.x += self.speed 
+            self.counter += 1
+            self.direction = 1
+        if keys[K_SPACE] and self.jumped == False:
+            self.vel_y = -15
+            self.jumped=True
+        if keys[K_SPACE] == False:
+            self.jumped=False
+        if keys[K_LEFT] == False and keys[K_a] == False and keys[K_RIGHT] == False and keys[K_d] == False:
+            self.counter = 0
+            self.index = 0
+            if self.direction == 1:
+                self.image = self.images_right[self.index]
+            if self.direction == -1:
+                self.image = self.images_left[self.index]
+        if self.counter > walk_cooldown:
+            self.counter = 0	
+            self.index += 1
+            if self.index >= len(self.images_right):
+                self.index = 0
+            if self.direction == 1:
+                self.image = self.images_right[self.index]
+            if self.direction == -1:
+                self.image = self.images_left[self.index]
+        #gravity
+        self.vel_y += 1
+        if self.vel_y > 10:
+            self.vel_y = 10
+        self.rect.y += self.vel_y
+        if self.rect.bottom > win_height:
+            self.rect.bottom = win_height
+            self.vel_y = 0
+
+class Enemy(sprite.Sprite): 
+    def __init__(self, player_image, size_x, size_y, player_x, player_y, player_speed): 
+        super().__init__() 
+        self.image = transform.scale(image.load(player_image), (size_x, size_y)) 
+        self.speed = player_speed 
+        self.rect = self.image.get_rect() 
+        self.rect.x = player_x 
+        self.rect.y = player_y 
+        self.size_x, self.size_y = size_x, size_y 
+        self.images_right = []
+        self.images_left = []
+        self.index = 0
+        self.counter = 0
+        for num in range(1, 9):
+            img_left = image.load(f'smal_skeleton_walk_left/smal_skeleton_walk_left_{num}.png')
+            img_left = transform.scale(img_left, (self.size_x, self.size_y))
+            img_right = transform.flip(img_left, True, False)
+            self.images_right.append(img_right)
+            self.images_left.append(img_left)
+        self.image = self.images_right[self.index]
+        self.direction = 0
+    def reset(self): 
+        window.blit(self.image, (self.rect.x, self.rect.y))
+    def update(self, target):
+        walk_cooldown = 2
         global moving_x, moving_y
         if abs(self.rect.x - target.rect.x) <= 300 and abs(self.rect.y - target.rect.y) <= 300:
             if self.rect.x != target.rect.x:
                 moving_x = True
-            '''if self.rect.y != target.rect.y:
-                moving_y = True'''
             if moving_x:
                 if self.rect.x - target.rect.x <= 0:
                     self.rect.x += self.speed
+                    self.counter += 1
+                    self.direction = 1
                 if self.rect.x - target.rect.x >= 0:
                     self.rect.x -= self.speed
-            '''if moving_y:
-                if self.rect.y - target.rect.y <= 0:
-                    self.rect.y += self.speed
-                if self.rect.y - target.rect.y >= 0:
-                    self.rect.y -= self.speed'''
+                    self.counter += 1
+                    self.direction = -1
             if target.rect.x == self.rect.x:
                 moving_x = False
-            '''if target.rect.y == self.rect.y:
-                moving_y = False'''
+                self.counter = 0
+            if self.counter > walk_cooldown:
+                self.counter = 0	
+                self.index += 1
+            if self.index >= len(self.images_right):
+                self.index = 0
+            if self.direction == 1:
+                self.image = self.images_right[self.index]
+            if self.direction == -1:
+                self.image = self.images_left[self.index]
+        
+tile_size=50
+def draw_grid():
+    for line in range(0, 20):
+        draw.line(window, (255, 255, 255), (0, line * tile_size), (win_width, line * tile_size))
+    for line in range(0, 25):
+        draw.line(window, (255, 255, 255), (line * tile_size, 0), (line * tile_size, win_height))
+class World():
+	def __init__(self, data):
+		self.tile_list = []
 
+		#load images
+		dirt_img = image.load('img_dirt.png')
+		grass_img = image.load('img_stone.png')
+
+		row_count = 0
+		for row in data:
+			col_count = 0
+			for tile in row:
+				if tile == 1:
+					img = transform.scale(dirt_img, (tile_size, tile_size))
+					img_rect = img.get_rect()
+					img_rect.x = col_count * tile_size
+					img_rect.y = row_count * tile_size
+					tile = (img, img_rect)
+					self.tile_list.append(tile)
+				if tile == 2:
+					img = transform.scale(grass_img, (tile_size, tile_size))
+					img_rect = img.get_rect()
+					img_rect.x = col_count * tile_size
+					img_rect.y = row_count * tile_size
+					tile = (img, img_rect)
+					self.tile_list.append(tile)
+				col_count += 1
+			row_count += 1
+
+	def draw(self):
+		for tile in self.tile_list:
+			window.blit(tile[0], tile[1])
+
+
+
+world_data = [
+[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
+[1, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 1], 
+[1, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 1], 
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 7, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
+[1, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
+[1, 7, 0, 0, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
+[1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
+[1, 0, 2, 0, 0, 7, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
+[1, 0, 0, 2, 0, 0, 4, 0, 0, 0, 0, 3, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 7, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1], 
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
+[1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 1], 
+[1, 0, 0, 1, 0, 0, 2, 2, 2, 6, 6, 6, 6, 6, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1]
+]
+
+world = World(world_data)
 #window
-win_width = 1000 
-win_height = 600
+win_width = 1250 
+win_height = 850
 window = display.set_mode((win_width, win_height)) 
 display.set_caption("My Little Adventure") 
 #backgrounds
 backgrounds = []
 current_background = 0
-background1 = transform.scale(image.load("background1.jpg"), (win_width, win_height)) 
+
+background1 = transform.scale(image.load("screen 1.png"), (win_width, win_height)) 
 backgrounds.append(background1)
 '''
 background2 = transform.scale(image.load("background2.jpg"), (win_width, win_height)) 
@@ -110,16 +236,13 @@ finish = False
 FPS = 60
 clock = time.Clock() 
 #music
-mixer.init() 
+mixer.init()
 mixer.music.load('Bmusic.ogg') 
 mixer.music.play()
 #sprites
-player = Player('кольт.png',100,140, 50, 305, 5)
-enemy = Enemy('кольт.png',100, 130 ,625,320, 2)
+player = Player('main_hero_walk_right/main_hero_walk_right_1.png',100,140, 50, 500, 5)
+enemy = Enemy('smal_skeleton_walk_left/smal_skeleton_walk_left_1.png',110, 140 ,625,485, 2)
 #boxes
-boxes = []
-box1 = GameSprite('box.png', 80, 80, 500, 370, 0)
-boxes.append(box1)
 while game: 
     for e in event.get(): 
         if e.type == QUIT: 
@@ -129,8 +252,10 @@ while game:
             player.update()
             enemy.update(player)
             window.blit(backgrounds[current_background], (0, 0))
-            box1.reset()
+            world.draw()
+            draw_grid()
             enemy.reset()
             player.reset()
+            
     display.update()
     clock.tick(FPS)
